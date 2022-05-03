@@ -3,10 +3,8 @@ from os import path as osp
 
 import mmcv
 import numpy as np
-import pyquaternion
+import glob
 
-from ..core import show_result
-from ..core.bbox import Box3DMode, Coord3DMode, LiDARInstance3DBoxes
 from .builder import DATASETS
 from .custom_3d import Custom3DDataset
 from .pipelines import Compose
@@ -20,7 +18,6 @@ class CarlaUamDataset(Custom3DDataset):
     def __init__(self,
                  data_root,
                  ann_file,
-                 split,
                  pipeline=None,
                  classes=None,
                  modality=None,
@@ -43,6 +40,59 @@ class CarlaUamDataset(Custom3DDataset):
                 use_lidar=True
             )
 
+            # for traversing files in one folder
+            self.img_folder = None
+            self.img_files = None
+            self.img = None
+
+            self.lidar_folder = None
+            self.lidar_files = None
+            self.cloud = None
+
+            # for files in all folders
+            self.img_paths = []
+            self.lidar_paths = []
+            self.img_label_paths = []
+            self.lidar_label_paths = []
+            self.folder_ind = []
+
+            self.lidar_label_folder = None
+            self.lidar_label_files = None
+
+            self.image_label_folder = None
+            self.image_label_files = None
+
+            self.config_params_file = None
+            self.config_params = None
+
+            self.lidar2world = None
+            self.world2camera = None
+            self.K = None
+
+    def _load_folder(self, folder_i):
+
+        self.subfolder_name = self.subfolders[folder_i]
+
+        self.img_folder = f'{self.dataset_root}/{self.subfolder_name}/image'
+        self.img_files = sorted(glob.glob(f'{self.img_folder}/*.png'))
+
+        self.image_label_folder = f'{self.dataset_root}/{self.subfolder_name}/image_labels'
+        self.image_label_files = sorted(glob.glob(f'{self.image_label_folder}/*.txt'))
+
+        self.lidar_folder = f'{self.dataset_root}/{self.subfolder_name}/lidar'
+        self.lidar_files = sorted(glob.glob(f'{self.lidar_folder}/*.ply'))
+
+        self.lidar_label_folder = f'{self.dataset_root}/{self.subfolder_name}/lidar_labels'
+        self.lidar_label_files = sorted(glob.glob(f'{self.lidar_label_folder}/*.txt'))
+
+        self.config_params_file = f'{self.dataset_root}/{self.subfolder_name}/params.json'
+        self.config_params = self._load_config_params()
+
+        self.lidar2world = np.asarray(self.config_params['lidar2world'])
+        self.world2camera = np.asarray(self.config_params['world2camera'])
+        self.K = np.asarray(self.config_params['camera_intrinsic'])
+
+
     def load_annotations(self, ann_file):
         """Load annotations from ann_file.
 
@@ -52,6 +102,16 @@ class CarlaUamDataset(Custom3DDataset):
         Returns:
             list[dict]: List of annotations.
         """
+        for folder_i, subfolder in enumerate(self.subfolders):
+            self._load_folder(folder_i=folder_i)
+            self.img_paths += self.img_files
+            self.lidar_paths += self.lidar_files
+            self.img_label_paths += self.image_label_files
+            self.lidar_label_paths += self.lidar_label_files
+            self.folder_ind += [folder_i for _ in range(len(self.img_files))]
+
+        # data_info: list(dict, dict, ...)
+
 
     def get_data_info(self, index):
         """Get data info according to the given index.
@@ -83,22 +143,3 @@ class CarlaUamDataset(Custom3DDataset):
                 - gt_labels_3d (np.ndarray): Labels of ground truths.
                 - gt_names (list[str]): Class names of ground truths.
         """
-
-    def _build_default_pipeline(self):
-        """Build the default pipeline for this dataset."""
-        pipeline = [
-            dict(
-                type='LoadPointsFromFile',
-                coord_type='LIDAR',
-                load_dim=4,
-                use_dim=4,
-                file_client_args=dict(backend='disk')),
-            dict(
-                type='DefaultFormatBundle3D',
-                class_names=self.CLASSES,
-                with_label=False),
-            dict(type='Collect3D', keys=['points'])
-        ]
-        if self.modality['use_camera']:
-            pipeline.insert(0, dict(type='LoadImageFromFile'))
-        return Compose(pipeline)
