@@ -2,11 +2,23 @@
 import argparse
 from os import path as osp
 
-from tools.data_converter import indoor_converter as indoor
-from tools.data_converter import kitti_converter as kitti
-from tools.data_converter import lyft_converter as lyft_converter
-from tools.data_converter import nuscenes_converter as nuscenes_converter
-from tools.data_converter.create_gt_database import (
+# # !!! encounter issue: ModuleNotFoundError: No module named 'tools.data_converter'
+# 1. add __init__.py file in tools folder
+# 2. comment orginal import
+
+# from tools.data_converter import indoor_converter as indoor
+# from tools.data_converter import kitti_converter as kitti
+# from tools.data_converter import lyft_converter as lyft_converter
+# from tools.data_converter import nuscenes_converter as nuscenes_converter
+# from tools.data_converter.create_gt_database import (
+#     create_groundtruth_database, GTDatabaseCreater)
+
+# 3. revise the import format and comment the indoor_converter which still has issue.
+# from data_converter import indoor_converter as indoor
+from data_converter import kitti_converter as kitti
+from data_converter import lyft_converter as lyft_converter
+from data_converter import nuscenes_converter as nuscenes_converter
+from data_converter.create_gt_database import (
     create_groundtruth_database, GTDatabaseCreater)
 
 

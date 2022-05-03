@@ -216,7 +216,8 @@ class LoadPointsFromMultiSweeps(object):
                     len(results['sweeps']), self.sweeps_num, replace=False)
             for idx in choices:
                 sweep = results['sweeps'][idx]
-                points_sweep = self._load_points(sweep['data_path'])
+                # points_sweep = self._load_points(sweep['data_path'])
+                points_sweep = self._load_points(f'../{sweep["data_path"]}')  # revise for running in tools folder
                 points_sweep = np.copy(points_sweep).reshape(-1, self.load_dim)
                 if self.remove_close:
                     points_sweep = self._remove_close(points_sweep)
