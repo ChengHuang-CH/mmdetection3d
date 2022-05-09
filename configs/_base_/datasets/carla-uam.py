@@ -1,9 +1,10 @@
 # dataset settings
 dataset_type = 'KittiDataset'
-data_root = 'data/kitti/'
-class_names = ['Pedestrian', 'Cyclist', 'Car']
 
-point_cloud_range = [0, -40, -3, 70.4, 40, 1]
+point_cloud_range = [-100, -100, -40, 100, 100, 40]
+# dataset settings
+data_root = 'data/carla_uam_kitti/'
+class_names = ['vehicle', 'walker', 'drone']
 input_modality = dict(use_lidar=True, use_camera=False)
 db_sampler = dict(
     data_root=data_root,
@@ -11,9 +12,9 @@ db_sampler = dict(
     rate=1.0,
     prepare=dict(
         filter_by_difficulty=[-1],
-        filter_by_min_points=dict(Car=5, Pedestrian=10, Cyclist=10)),
+        filter_by_min_points=dict(vehicle=5, walker=10, drone=10)),
     classes=class_names,
-    sample_groups=dict(Car=12, Pedestrian=6, Cyclist=6))
+    sample_groups=dict(vehicle=12, walker=6, drone=6))
 
 file_client_args = dict(backend='disk')
 # Uncomment the following if use ceph or other file clients.
@@ -61,7 +62,7 @@ test_pipeline = [
         file_client_args=file_client_args),
     dict(
         type='MultiScaleFlipAug3D',
-        img_scale=(1333, 800),
+        img_scale=(1080, 720),
         pts_scale_ratio=1,
         flip=False,
         transforms=[
@@ -97,8 +98,8 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=6,
-    workers_per_gpu=4,
+    samples_per_gpu=1,
+    workers_per_gpu=1,
     train=dict(
         type='RepeatDataset',
         times=2,
