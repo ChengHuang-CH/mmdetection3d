@@ -288,14 +288,14 @@ class DataBaseSampler(object):
 
             ret = {
                 'gt_labels_3d':
-                gt_labels,
+                    gt_labels,
                 'gt_bboxes_3d':
-                sampled_gt_bboxes,
+                    sampled_gt_bboxes,
                 'points':
-                s_points_list[0].cat(s_points_list),
+                    s_points_list[0].cat(s_points_list),
                 'group_ids':
-                np.arange(gt_bboxes.shape[0],
-                          gt_bboxes.shape[0] + len(sampled))
+                    np.arange(gt_bboxes.shape[0],
+                              gt_bboxes.shape[0] + len(sampled))
             }
 
         return ret
@@ -318,8 +318,12 @@ class DataBaseSampler(object):
         gt_bboxes_bv = box_np_ops.center_to_corner_box2d(
             gt_bboxes[:, 0:2], gt_bboxes[:, 3:5], gt_bboxes[:, 6])
 
-        sp_boxes = np.stack([i['box3d_lidar'] for i in sampled], axis=0)
-        boxes = np.concatenate([gt_bboxes, sp_boxes], axis=0).copy()
+        # solve the issue for empty sampled
+        if sampled:
+            sp_boxes = np.stack([i['box3d_lidar'] for i in sampled], axis=0)
+            boxes = np.concatenate([gt_bboxes, sp_boxes], axis=0).copy()
+        else:
+            boxes = gt_bboxes.copy()
 
         sp_boxes_new = boxes[gt_bboxes.shape[0]:]
         sp_boxes_bv = box_np_ops.center_to_corner_box2d(

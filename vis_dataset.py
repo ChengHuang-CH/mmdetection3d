@@ -10,8 +10,10 @@ from mmcv import Config, DictAction, mkdir_or_exist
 
 from mmdet3d.core.bbox import (Box3DMode, CameraInstance3DBoxes, Coord3DMode,
                                DepthInstance3DBoxes, LiDARInstance3DBoxes)
-from mmdet3d.core.visualizer import (show_multi_modality_result, show_result,
-                                     show_seg_result)
+from mmdet3d.core.visualizer.image_vis import (draw_camera_bbox3d_on_img,
+                                               draw_depth_bbox3d_on_img,
+                                               draw_lidar_bbox3d_on_img)
+from mmdet3d.core.visualizer.open3d_vis import Visualizer
 from mmdet3d.datasets import build_dataset
 import threading
 import open3d as o3d
@@ -142,7 +144,7 @@ class VisDataset:
         if img_metas['box_mode_3d'] != Box3DMode.DEPTH:
             points, gt_bboxes = self.to_depth_mode(points, gt_bboxes)
         filename = osp.splitext(osp.basename(img_metas['pts_filename']))[0]
-        show_result(
+        self.show_result(
             points,
             gt_bboxes.clone(),
             None,
@@ -163,7 +165,7 @@ class VisDataset:
             gt_bboxes = None
         filename = Path(img_metas['filename']).name
         if isinstance(gt_bboxes, DepthInstance3DBoxes):
-            show_multi_modality_result(
+            self.show_multi_modality_result(
                 img,
                 gt_bboxes,
                 None,
@@ -174,7 +176,7 @@ class VisDataset:
                 img_metas=img_metas,
                 show=show)
         elif isinstance(gt_bboxes, LiDARInstance3DBoxes):
-            show_multi_modality_result(
+            self.show_multi_modality_result(
                 img,
                 gt_bboxes,
                 None,
@@ -185,7 +187,7 @@ class VisDataset:
                 img_metas=img_metas,
                 show=show)
         elif isinstance(gt_bboxes, CameraInstance3DBoxes):
-            show_multi_modality_result(
+            self.show_multi_modality_result(
                 img,
                 gt_bboxes,
                 None,
@@ -199,8 +201,136 @@ class VisDataset:
             # can't project, just show img
             warnings.warn(
                 f'unrecognized gt box type {type(gt_bboxes)}, only show image')
-            show_multi_modality_result(
+            self.show_multi_modality_result(
                 img, None, None, None, out_dir, filename, show=show)
+
+    def show_multi_modality_result(self,
+                                   img,
+                                   gt_bboxes,
+                                   pred_bboxes,
+                                   proj_mat,
+                                   out_dir,
+                                   filename,
+                                   box_mode='lidar',
+                                   img_metas=None,
+                                   show=False,
+                                   gt_bbox_color=(61, 102, 255),
+                                   pred_bbox_color=(241, 101, 72)):
+        """Convert multi-modality detection results into 2D results.
+
+        Project the predicted 3D bbox to 2D image plane and visualize them.
+
+        Args:
+            img (np.ndarray): The numpy array of image in cv2 fashion.
+            gt_bboxes (:obj:`BaseInstance3DBoxes`): Ground truth boxes.
+            pred_bboxes (:obj:`BaseInstance3DBoxes`): Predicted boxes.
+            proj_mat (numpy.array, shape=[4, 4]): The projection matrix
+                according to the camera intrinsic parameters.
+            out_dir (str): Path of output directory.
+            filename (str): Filename of the current frame.
+            box_mode (str, optional): Coordinate system the boxes are in.
+                Should be one of 'depth', 'lidar' and 'camera'.
+                Defaults to 'lidar'.
+            img_metas (dict, optional): Used in projecting depth bbox.
+                Defaults to None.
+            show (bool, optional): Visualize the results online. Defaults to False.
+            gt_bbox_color (str or tuple(int), optional): Color of bbox lines.
+               The tuple of color should be in BGR order. Default: (255, 102, 61).
+            pred_bbox_color (str or tuple(int), optional): Color of bbox lines.
+               The tuple of color should be in BGR order. Default: (72, 101, 241).
+        """
+        if box_mode == 'depth':
+            draw_bbox = draw_depth_bbox3d_on_img
+        elif box_mode == 'lidar':
+            draw_bbox = draw_lidar_bbox3d_on_img
+        elif box_mode == 'camera':
+            draw_bbox = draw_camera_bbox3d_on_img
+        else:
+            raise NotImplementedError(f'unsupported box mode {box_mode}')
+
+        result_path = osp.join(out_dir, filename)
+        mmcv.mkdir_or_exist(result_path)
+
+        if show:
+            show_img = img.copy()
+            if gt_bboxes is not None:
+                show_img = draw_bbox(
+                    gt_bboxes, show_img, proj_mat, img_metas, color=gt_bbox_color)
+            if pred_bboxes is not None:
+                show_img = draw_bbox(
+                    pred_bboxes,
+                    show_img,
+                    proj_mat,
+                    img_metas,
+                    color=pred_bbox_color)
+            mmcv.imshow(show_img, win_name='project_bbox3d_img', wait_time=0)
+
+        if img is not None:
+            mmcv.imwrite(img, osp.join(result_path, f'{filename}_img.png'))
+
+        if gt_bboxes is not None:
+            gt_img = draw_bbox(
+                gt_bboxes, img, proj_mat, img_metas, color=gt_bbox_color)
+            mmcv.imwrite(gt_img, osp.join(result_path, f'{filename}_gt.png'))
+
+        if pred_bboxes is not None:
+            pred_img = draw_bbox(
+                pred_bboxes, img, proj_mat, img_metas, color=pred_bbox_color)
+            mmcv.imwrite(pred_img, osp.join(result_path, f'{filename}_pred.png'))
+
+    def show_result(self,
+                    points,
+                    gt_bboxes,
+                    pred_bboxes,
+                    out_dir,
+                    filename,
+                    show=False,
+                    snapshot=False,
+                    pred_labels=None):
+        """Convert results into format that is directly readable for meshlab.
+
+        Args:
+            points (np.ndarray): Points.
+            gt_bboxes (np.ndarray): Ground truth boxes.
+            pred_bboxes (np.ndarray): Predicted boxes.
+            out_dir (str): Path of output directory
+            filename (str): Filename of the current frame.
+            show (bool, optional): Visualize the results online. Defaults to False.
+            snapshot (bool, optional): Whether to save the online results.
+                Defaults to False.
+            pred_labels (np.ndarray, optional): Predicted labels of boxes.
+                Defaults to None.
+        """
+        result_path = osp.join(out_dir, filename)
+        mmcv.mkdir_or_exist(result_path)
+
+        if show:
+
+
+            vis = Visualizer(points)
+            if pred_bboxes is not None:
+                if pred_labels is None:
+                    vis.add_bboxes(bbox3d=pred_bboxes)
+                else:
+                    palette = np.random.randint(
+                        0, 255, size=(pred_labels.max() + 1, 3)) / 256
+                    labelDict = {}
+                    for j in range(len(pred_labels)):
+                        i = int(pred_labels[j].numpy())
+                        if labelDict.get(i) is None:
+                            labelDict[i] = []
+                        labelDict[i].append(pred_bboxes[j])
+                    for i in labelDict:
+                        vis.add_bboxes(
+                            bbox3d=np.array(labelDict[i]),
+                            bbox_color=palette[i],
+                            points_in_box_color=palette[i])
+
+            if gt_bboxes is not None:
+                vis.add_bboxes(bbox3d=gt_bboxes, bbox_color=(0, 0, 1))
+            show_path = osp.join(result_path,
+                                 f'{filename}_online.png') if snapshot else None
+            vis.show(show_path)
 
     def main(self):
         args = self.parse_args()

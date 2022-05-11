@@ -692,13 +692,25 @@ def kitti_eval(gt_annos,
         3: 'Van',
         4: 'Person_sitting',
     }
-    name_to_class = {v: n for n, v in class_to_name.items()}
+
+    # custom class
+    class_to_name1 = {
+        0: 'vehicle',
+        1: 'walker',
+        2: 'drone'
+    }
+
     if not isinstance(current_classes, (list, tuple)):
         current_classes = [current_classes]
     current_classes_int = []
     for curcls in current_classes:
         if isinstance(curcls, str):
-            current_classes_int.append(name_to_class[curcls])
+            try:
+                name_to_class = {v: n for n, v in class_to_name.items()}
+                current_classes_int.append(name_to_class[curcls])
+            except:
+                name_to_class = {v: n for n, v in class_to_name1.items()}
+                current_classes_int.append(name_to_class[curcls])
         else:
             current_classes_int.append(curcls)
     current_classes = current_classes_int

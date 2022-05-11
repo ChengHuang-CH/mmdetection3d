@@ -4,7 +4,8 @@ _base_ = ['../_base_/schedules/cosine.py', '../_base_/default_runtime.py']
 voxel_size = [0.05, 0.05, 0.1]
 point_cloud_range = [0, -40, -3, 70.4, 40, 1]
 # x_min, y_min, z_min, x_max, y_max, z_max)
-point_cloud_range = [-60, -60, -1, 60, 60, 40]
+point_cloud_range = [-60, -60, -20, 60, 60, 40]
+voxel_size = [0.16, 0.16, 4]
 
 model = dict(
     type='DynamicMVXFasterRCNN',
