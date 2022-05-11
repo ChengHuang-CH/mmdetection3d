@@ -1,11 +1,10 @@
 _base_ = ['../_base_/schedules/cosine.py', '../_base_/default_runtime.py']
 
 # model settings
-voxel_size = [0.05, 0.05, 0.1]
-point_cloud_range = [0, -40, -3, 70.4, 40, 1]
+voxel_size = [0.5, 0.5, 0.5]
+# point_cloud_range = [0, -40, -3, 70.4, 40, 1]
 # x_min, y_min, z_min, x_max, y_max, z_max)
 point_cloud_range = [-60, -60, -20, 60, 60, 40]
-voxel_size = [0.16, 0.16, 4]
 
 model = dict(
     type='DynamicMVXFasterRCNN',
@@ -73,9 +72,9 @@ model = dict(
         anchor_generator=dict(
             type='Anchor3DRangeGenerator',
             ranges=[
-                [0, -40.0, -0.6, 70.4, 40.0, -0.6],
-                [0, -40.0, -0.6, 70.4, 40.0, -0.6],
-                [0, -40.0, -1.78, 70.4, 40.0, -1.78],
+                [-60, -60, -13.5, 60, 60, -13.5],
+                [-60, -60, -13.5, 60, 60, -13.5],
+                [-60, -60, -13.0, 60, 60, -13.0],
             ],
             sizes=[[0.8, 0.6, 1.73], [1.76, 0.6, 1.73], [3.9, 1.6, 1.56]],
             rotations=[0, 1.57],
@@ -145,7 +144,7 @@ train_pipeline = [
     dict(type='LoadAnnotations3D', with_bbox_3d=True, with_label_3d=True),
     dict(
         type='Resize',
-        img_scale=[(640, 192), (2560, 768)],
+        img_scale=(1080, 720),
         multiscale_mode='range',
         keep_ratio=True),
     dict(
@@ -169,7 +168,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug3D',
-        img_scale=(1280, 384),
+        img_scale=(1080, 720),
         pts_scale_ratio=1,
         flip=False,
         transforms=[
@@ -206,6 +205,7 @@ eval_pipeline = [
 data = dict(
     samples_per_gpu=1,
     workers_per_gpu=2,
+    # shuffle=False,
     train=dict(
         type='RepeatDataset',
         times=2,

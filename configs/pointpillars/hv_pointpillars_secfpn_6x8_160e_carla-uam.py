@@ -5,7 +5,7 @@ _base_ = [
 
 # x_min, y_min, z_min, x_max, y_max, z_max)
 point_cloud_range = [-100, -100, -40, 100, 100, 40]
-voxel_size = [0.16, 0.16, 4]
+voxel_size = [0.5, 0.5, 0.5]
 
 # dataset settings
 data_root = 'data/carla_uam_kitti/'
@@ -17,7 +17,7 @@ db_sampler = dict(
     rate=1.0,
     prepare=dict(
         filter_by_difficulty=[-1],
-        filter_by_min_points=dict(vehicle=1, walker=1, drone=1)),
+        filter_by_min_points=dict(vehicle=5, walker=1, drone=1)),
     classes=class_names,
     sample_groups=dict(vehicle=2, walker=2, drone=2))
 
@@ -70,7 +70,7 @@ model = dict(
     type='VoxelNet',
     voxel_layer=dict(
         max_num_points=32,  # max_points_per_voxel
-        point_cloud_range=[0, -39.68, -3, 69.12, 39.68, 1],
+        point_cloud_range=point_cloud_range,
         voxel_size=voxel_size,
         max_voxels=(16000, 40000)  # (training, testing) max_voxels
     ),
@@ -80,7 +80,7 @@ model = dict(
         feat_channels=[64],
         with_distance=False,
         voxel_size=voxel_size,
-        point_cloud_range=[0, -39.68, -3, 69.12, 39.68, 1]),
+        point_cloud_range=point_cloud_range),
     middle_encoder=dict(
         type='PointPillarsScatter', in_channels=64, output_shape=[496, 432]),
     backbone=dict(

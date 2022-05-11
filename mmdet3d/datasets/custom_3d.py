@@ -229,6 +229,7 @@ class Custom3DDataset(Dataset):
                 (example is None or
                     ~(example['gt_labels_3d']._data != -1).any()):
             return None
+        # print(f'file name: {example["img_metas"]._data["filename"]}')
         return example
 
     def prepare_test_data(self, index):
