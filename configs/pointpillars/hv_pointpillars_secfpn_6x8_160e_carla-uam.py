@@ -62,6 +62,8 @@ test_pipeline = [
 ]
 
 data = dict(
+    samples_per_gpu=4,
+    workers_per_gpu=4,
     train=dict(dataset=dict(pipeline=train_pipeline, classes=class_names)),
     val=dict(pipeline=test_pipeline, classes=class_names),
     test=dict(pipeline=test_pipeline, classes=class_names))
@@ -125,26 +127,26 @@ model = dict(
     # model training and testing settings
     train_cfg=dict(
         assigner=[
-            dict(  # for Pedestrian
-                type='MaxIoUAssigner',
-                iou_calculator=dict(type='BboxOverlapsNearest3D'),
-                pos_iou_thr=0.5,
-                neg_iou_thr=0.35,
-                min_pos_iou=0.35,
-                ignore_iof_thr=-1),
-            dict(  # for Cyclist
-                type='MaxIoUAssigner',
-                iou_calculator=dict(type='BboxOverlapsNearest3D'),
-                pos_iou_thr=0.5,
-                neg_iou_thr=0.35,
-                min_pos_iou=0.35,
-                ignore_iof_thr=-1),
-            dict(  # for Car
+            dict(  # for vehicle
                 type='MaxIoUAssigner',
                 iou_calculator=dict(type='BboxOverlapsNearest3D'),
                 pos_iou_thr=0.6,
                 neg_iou_thr=0.45,
                 min_pos_iou=0.45,
+                ignore_iof_thr=-1),
+            dict(  # for walker
+                type='MaxIoUAssigner',
+                iou_calculator=dict(type='BboxOverlapsNearest3D'),
+                pos_iou_thr=0.35,
+                neg_iou_thr=0.2,
+                min_pos_iou=0.2,
+                ignore_iof_thr=-1),
+            dict(  # for drone
+                type='MaxIoUAssigner',
+                iou_calculator=dict(type='BboxOverlapsNearest3D'),
+                pos_iou_thr=0.35,
+                neg_iou_thr=0.2,
+                min_pos_iou=0.2,
                 ignore_iof_thr=-1),
         ],
         allowed_border=0,
