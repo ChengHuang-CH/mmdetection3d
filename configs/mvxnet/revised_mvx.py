@@ -72,11 +72,11 @@ model = dict(
         anchor_generator=dict(
             type='Anchor3DRangeGenerator',
             ranges=[
-                [-60, -60, -13.5, 60, 60, -13.5],
-                [-60, -60, -13.5, 60, 60, -13.5],
-                [-60, -60, -13.0, 60, 60, -13.0],
+                [-60, -60, -13.5, 60, 60, -11.5],
+                [-60, -60, -14.5, 60, 60, -11.5],
+                [-60, -60, -14.5, 60, 60, 30.0],
             ],
-            sizes=[[0.8, 0.6, 1.73], [1.76, 0.6, 1.73], [3.9, 1.6, 1.56]],
+            sizes=[[3.9, 1.6, 1.56], [0.8, 0.6, 1.73], [2.0, 2.0, 2.0]],
             rotations=[0, 1.57],
             reshape_out=False),
         assigner_per_size=True,
@@ -96,26 +96,26 @@ model = dict(
     train_cfg=dict(
         pts=dict(
             assigner=[
-                dict(  # for Pedestrian
-                    type='MaxIoUAssigner',
-                    iou_calculator=dict(type='BboxOverlapsNearest3D'),
-                    pos_iou_thr=0.35,
-                    neg_iou_thr=0.2,
-                    min_pos_iou=0.2,
-                    ignore_iof_thr=-1),
-                dict(  # for Cyclist
-                    type='MaxIoUAssigner',
-                    iou_calculator=dict(type='BboxOverlapsNearest3D'),
-                    pos_iou_thr=0.35,
-                    neg_iou_thr=0.2,
-                    min_pos_iou=0.2,
-                    ignore_iof_thr=-1),
-                dict(  # for Car
+                dict(  # for vehicle
                     type='MaxIoUAssigner',
                     iou_calculator=dict(type='BboxOverlapsNearest3D'),
                     pos_iou_thr=0.6,
                     neg_iou_thr=0.45,
                     min_pos_iou=0.45,
+                    ignore_iof_thr=-1),
+                dict(  # for walker
+                    type='MaxIoUAssigner',
+                    iou_calculator=dict(type='BboxOverlapsNearest3D'),
+                    pos_iou_thr=0.35,
+                    neg_iou_thr=0.2,
+                    min_pos_iou=0.2,
+                    ignore_iof_thr=-1),
+                dict(  # for drone
+                    type='MaxIoUAssigner',
+                    iou_calculator=dict(type='BboxOverlapsNearest3D'),
+                    pos_iou_thr=0.35,
+                    neg_iou_thr=0.2,
+                    min_pos_iou=0.2,
                     ignore_iof_thr=-1),
             ],
             allowed_border=0,
@@ -203,8 +203,8 @@ eval_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=1,
-    workers_per_gpu=2,
+    samples_per_gpu=4,
+    workers_per_gpu=4,
     # shuffle=False,
     train=dict(
         type='RepeatDataset',
@@ -251,4 +251,4 @@ optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 evaluation = dict(interval=1, pipeline=eval_pipeline)
 
 # You may need to download the model first is the network is unstable
-load_from = 'https://download.openmmlab.com/mmdetection3d/pretrain_models/mvx_faster_rcnn_detectron2-caffe_20e_coco-pretrain_gt-sample_kitti-3-class_moderate-79.3_20200207-a4a6a3c7.pth'  # noqa
+# load_from = 'https://download.openmmlab.com/mmdetection3d/pretrain_models/mvx_faster_rcnn_detectron2-caffe_20e_coco-pretrain_gt-sample_kitti-3-class_moderate-79.3_20200207-a4a6a3c7.pth'  # noqa
