@@ -685,19 +685,19 @@ def kitti_eval(gt_annos,
                             [0.5, 0.25, 0.25, 0.5, 0.25],
                             [0.5, 0.25, 0.25, 0.5, 0.25]])
     min_overlaps = np.stack([overlap_0_7, overlap_0_5], axis=0)  # [2, 3, 5]
-    class_to_name = {
-        0: 'Car',
-        1: 'Pedestrian',
-        2: 'Cyclist',
-        3: 'Van',
-        4: 'Person_sitting',
-    }
-    # custom class
     # class_to_name = {
-    #     0: 'vehicle',
-    #     1: 'walker',
-    #     2: 'drone'
+    #     0: 'Car',
+    #     1: 'Pedestrian',
+    #     2: 'Cyclist',
+    #     3: 'Van',
+    #     4: 'Person_sitting',
     # }
+    # custom class
+    class_to_name = {
+        0: 'vehicle',
+        1: 'walker',
+        2: 'drone'
+    }
 
     if not isinstance(current_classes, (list, tuple)):
         current_classes = [current_classes]
@@ -912,16 +912,16 @@ def kitti_eval_coco_style(gt_annos, dt_annos, current_classes):
     }
 
     # custom
-    # class_to_name = {
-    #     0: 'vehicle',
-    #     1: 'walker',
-    #     2: 'drone'
-    # }
-    # class_to_range = {
-    #     0: [0.5, 0.95, 10],
-    #     1: [0.25, 0.7, 10],
-    #     2: [0.25, 0.7, 10]
-    # }
+    class_to_name = {
+        0: 'vehicle',
+        1: 'walker',
+        2: 'drone'
+    }
+    class_to_range = {
+        0: [0.5, 0.95, 10],
+        1: [0.25, 0.7, 10],
+        2: [0.25, 0.7, 10]
+    }
 
     name_to_class = {v: n for n, v in class_to_name.items()}
     if not isinstance(current_classes, (list, tuple)):
